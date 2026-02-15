@@ -25,6 +25,14 @@ const paymentSchema = new mongoose.Schema(
       required: true
     },
 
+    sessionId: {
+      type: String
+    },
+
+    invoicePath: {
+      type: String
+    },
+
     paymentStatus: {
       type: String,
       enum: ["pending", "success", "failed"],

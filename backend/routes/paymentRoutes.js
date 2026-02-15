@@ -20,6 +20,13 @@ router.get(
   paymentController.getClientPayments
 );
 
+router.post(
+  "/confirm",
+  protect,
+  authorizeRoles("client"),
+  paymentController.confirmPayment
+);
+
 // Provider
 router.get(
   "/provider",

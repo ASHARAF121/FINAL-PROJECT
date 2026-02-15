@@ -26,9 +26,14 @@ const userSchema = new mongoose.Schema(
       default: "client"
     },
 
-    phone: {
+   
+    serviceType: {
       type: String
     },
+    serviceArea: {
+      type: String
+    },
+    
 
     isVerified: {
       type: Boolean,

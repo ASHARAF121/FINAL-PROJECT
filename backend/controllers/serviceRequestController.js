@@ -7,18 +7,26 @@ const ServiceRequest = require("../models/ServiceRequest");
  */
 exports.createRequest = async (req, res) => {
   try {
-    const { serviceId, scheduledDate, location } = req.body;
+    const { serviceType, date, time, location, notes } = req.body;
+
+    if (!serviceType || !date || !time || !location) {
+      return res.status(400).json({ 
+        message: "Missing required fields: serviceType, date, time, location" 
+      });
+    }
 
     const request = await ServiceRequest.create({
       client: req.user._id,
-      service: serviceId,
-      scheduledDate,
-      location
+      serviceType,
+      date,
+      time,
+      location,
+      notes
     });
 
     res.status(201).json(request);
   } catch (error) {
-    res.status(500).json({ message: "Failed to create service request" });
+    res.status(500).json({ message: "Failed to create service request", error: error.message });
   }
 };
 

@@ -15,7 +15,11 @@ const serviceRequestSchema = new mongoose.Schema(
 
     service: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Service",
+      ref: "Service"
+    },
+
+    serviceType: {
+      type: String,
       required: true
     },
 
@@ -25,14 +29,23 @@ const serviceRequestSchema = new mongoose.Schema(
       default: "pending"
     },
 
-    scheduledDate: {
+    date: {
       type: Date,
+      required: true
+    },
+
+    time: {
+      type: String,
       required: true
     },
 
     location: {
       type: String,
       required: true
+    },
+
+    notes: {
+      type: String
     }
   },
   { timestamps: true }

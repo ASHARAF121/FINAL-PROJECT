@@ -1,6 +1,7 @@
 const Service = require("../models/Service");
 const ServiceRequest = require("../models/ServiceRequest");
 const Review = require("../models/Review");
+const User = require("../models/User");
 
 /**
  * @desc   Get all available services
@@ -23,18 +24,58 @@ exports.getServices = async (req, res) => {
  */
 exports.createServiceRequest = async (req, res) => {
   try {
-    const { serviceId, scheduledDate, location } = req.body;
+    const { serviceType, serviceId, providerId, location, date, time, notes } = req.body;
 
-    const request = await ServiceRequest.create({
+    if (!serviceType || !location || !date || !time) {
+      return res.status(400).json({
+        message: "Missing required fields: serviceType, location, date, time"
+      });
+    }
+
+    const newReq = {
       client: req.user._id,
-      service: serviceId,
-      scheduledDate,
-      location
-    });
+      serviceType,
+      location,
+      date,
+      time,
+      notes
+    };
+
+    if (serviceId) newReq.service = serviceId;
+    if (providerId) {
+      // validate provider exists and is a provider
+      const provider = await User.findById(providerId);
+      if (!provider || provider.role !== "provider") {
+        return res.status(400).json({ message: "Invalid provider selected" });
+      }
+      newReq.provider = providerId;
+      // if assigning provider directly, set status to accepted
+      newReq.status = "accepted";
+    }
+
+    const request = await ServiceRequest.create(newReq);
 
     res.status(201).json(request);
   } catch (error) {
-    res.status(500).json({ message: "Failed to create service request" });
+    res.status(500).json({ message: "Failed to create service request", error: error.message });
+  }
+};
+
+/**
+ * @desc Get providers for clients (optionally filter by serviceType)
+ * @route GET /api/client/providers
+ * @access Client
+ */
+exports.getProviders = async (req, res) => {
+  try {
+    const { serviceType } = req.query;
+    const filter = { role: "provider", isVerified: true };
+    if (serviceType) filter.serviceType = serviceType;
+
+    const providers = await User.find(filter).select("_id name email serviceType serviceArea");
+    res.json(providers);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch providers" });
   }
 };
 
@@ -46,8 +87,9 @@ exports.createServiceRequest = async (req, res) => {
 exports.getMyRequests = async (req, res) => {
   try {
     const requests = await ServiceRequest.find({ client: req.user._id })
-      .populate("service", "title category basePrice")
-      .populate("provider", "name phone");
+      .populate("serviceType", "title description price")
+      .populate("provider", "name phone email rating")
+      .select("_id serviceType location date time status notes provider createdAt");
 
     res.json(requests);
   } catch (error) {

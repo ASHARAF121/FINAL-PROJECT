@@ -1,6 +1,8 @@
 const Payment = require("../models/Payment");
 const ServiceRequest = require("../models/ServiceRequest");
 const Service = require("../models/Service");
+const { generateInvoice } = require("../features/invoiceGenerator");
+const crypto = require("crypto");
 
 /**
  * @desc   Create payment for a service request
@@ -14,6 +16,8 @@ exports.createPayment = async (req, res) => {
     const serviceRequest = await ServiceRequest.findById(serviceRequestId)
       .populate("service")
       .populate("provider");
+   
+
 
     if (!serviceRequest) {
       return res.status(404).json({ message: "Service request not found" });
@@ -27,21 +31,63 @@ exports.createPayment = async (req, res) => {
 
     const amount = serviceRequest.service.basePrice;
 
+    // create a pending payment and return a mock payment session/url
+    const sessionId = crypto.randomBytes(12).toString("hex");
+
     const payment = await Payment.create({
       serviceRequest: serviceRequest._id,
       client: req.user._id,
       provider: serviceRequest.provider,
       amount,
       paymentMethod,
-      paymentStatus: "success" // simulate successful payment
+      paymentStatus: "pending",
+      sessionId
     });
 
+    // In a real integration you'd redirect the client to a payment provider.
+    const paymentUrl = `https://mock-payment.local/pay/${sessionId}`;
+
     res.status(201).json({
-      message: "Payment successful",
-      payment
+      message: "Payment initiated",
+      payment,
+      paymentUrl
     });
   } catch (error) {
     res.status(500).json({ message: "Payment failed" });
+  }
+};
+
+/**
+ * @desc Confirm payment (mock)
+ * @route POST /api/payment/confirm
+ * @access Client
+ */
+exports.confirmPayment = async (req, res) => {
+  try {
+    const { paymentId } = req.body;
+
+    const payment = await Payment.findById(paymentId);
+    if (!payment) return res.status(404).json({ message: "Payment not found" });
+    if (payment.client.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    if (payment.paymentStatus === "success") {
+      return res.json({ message: "Payment already confirmed", payment });
+    }
+
+    payment.paymentStatus = "success";
+    await payment.save();
+
+    // generate invoice file
+    const invoicePath = await generateInvoice(payment);
+    payment.invoicePath = invoicePath;
+    await payment.save();
+
+    res.json({ message: "Payment confirmed", payment, invoicePath });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to confirm payment" });
   }
 };
 
