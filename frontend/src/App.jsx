@@ -6,11 +6,11 @@ import Navbar from "./components/common/Navbar";
 
 import AdminDashboard from "./components/admin/AdminDashboard";
 import ClientDashboard from "./components/client/ClientDashboard";
-import ProviderDashboard from "./components/Provider/ProviderDashboard";
+import ProviderDashboard from "./components/provider/ProviderDashboard";
 import RequestService from "./components/client/RequestService";
 import Earnings from "./components/provider/Earnings";
 import ServiceRequest from "./components/provider/ServiceRequest";
-import Availibility from "./components/Provider/Availibility";
+import Availibility from "./components/provider/Availibility";
 
 
 
