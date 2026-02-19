@@ -1,0 +1,10 @@
+{
+  "invoiceId": "INV-699746e90c76d6ac109b0f0a",
+  "paymentId": "699746e90c76d6ac109b0f0a",
+  "client": "69973d2464f97e7d4ad8206a",
+  "provider": "69973d7d64f97e7d4ad8206d",
+  "amount": 500,
+  "paymentMethod": "card",
+  "paymentStatus": "completed",
+  "createdAt": "2026-02-19T17:22:50.116Z"
+}

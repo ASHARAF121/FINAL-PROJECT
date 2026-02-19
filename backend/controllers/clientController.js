@@ -24,7 +24,7 @@ exports.getServices = async (req, res) => {
  */
 exports.createServiceRequest = async (req, res) => {
   try {
-    const { serviceType, serviceId, providerId, location, date, time, notes } = req.body;
+    const { serviceType, service, providerId, location, date, time, notes } = req.body;
 
     if (!serviceType || !location || !date || !time) {
       return res.status(400).json({
@@ -41,7 +41,8 @@ exports.createServiceRequest = async (req, res) => {
       notes
     };
 
-    if (serviceId) newReq.service = serviceId;
+    if (service) newReq.service = service;
+
     if (providerId) {
       // validate provider exists and is a provider
       const provider = await User.findById(providerId);

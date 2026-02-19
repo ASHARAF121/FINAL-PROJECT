@@ -1,0 +1,10 @@
+{
+  "invoiceId": "INV-69973c3b0a3678ce4ddf958d",
+  "paymentId": "69973c3b0a3678ce4ddf958d",
+  "client": "69973ad00a3678ce4ddf88af",
+  "provider": "6994876c0118ab4262a59fee",
+  "amount": 500,
+  "paymentMethod": "card",
+  "paymentStatus": "pending",
+  "createdAt": "2026-02-19T16:37:15.293Z"
+}
