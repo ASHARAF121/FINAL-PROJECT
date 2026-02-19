@@ -1,11 +1,10 @@
 const User = require("../models/User");
 const ServiceRequest = require("../models/ServiceRequest");
 const Payment = require("../models/Payment");
+const bcrypt = require("bcryptjs");
 
 /**
- * @desc   Get all service providers (pending & verified)
- * @route  GET /api/admin/providers
- * @access Admin
+ * GET ALL PROVIDERS
  */
 exports.getAllProviders = async (req, res) => {
   try {
@@ -17,9 +16,7 @@ exports.getAllProviders = async (req, res) => {
 };
 
 /**
- * @desc   Verify / approve a service provider
- * @route  PUT /api/admin/verify-provider/:id
- * @access Admin
+ * VERIFY PROVIDER
  */
 exports.verifyProvider = async (req, res) => {
   try {
@@ -39,9 +36,7 @@ exports.verifyProvider = async (req, res) => {
 };
 
 /**
- * @desc   Get all users (clients + providers)
- * @route  GET /api/admin/users
- * @access Admin
+ * GET ALL USERS
  */
 exports.getAllUsers = async (req, res) => {
   try {
@@ -53,9 +48,7 @@ exports.getAllUsers = async (req, res) => {
 };
 
 /**
- * @desc   Get all service requests
- * @route  GET /api/admin/service-requests
- * @access Admin
+ * GET ALL SERVICE REQUESTS
  */
 exports.getAllServiceRequests = async (req, res) => {
   try {
@@ -71,9 +64,7 @@ exports.getAllServiceRequests = async (req, res) => {
 };
 
 /**
- * @desc   Get platform earnings & payment history
- * @route  GET /api/admin/payments
- * @access Admin
+ * GET ALL PAYMENTS
  */
 exports.getAllPayments = async (req, res) => {
   try {
@@ -88,9 +79,7 @@ exports.getAllPayments = async (req, res) => {
 };
 
 /**
- * @desc   Admin dashboard statistics
- * @route  GET /api/admin/stats
- * @access Admin
+ * DASHBOARD STATS
  */
 exports.getDashboardStats = async (req, res) => {
   try {
@@ -116,3 +105,72 @@ exports.getDashboardStats = async (req, res) => {
     res.status(500).json({ message: "Failed to load dashboard stats" });
   }
 };
+
+/**
+ * CREATE USER
+ */
+exports.createUser = async (req, res) => {
+  try {
+    const { name, email, password, role } = req.body;
+
+    if (!name || !email || !password || !role) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "User already exists" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+      role,
+    });
+
+    res.status(201).json({
+      message: "User created successfully",
+      user: {
+        _id: newUser._id,
+        name: newUser.name,
+        email: newUser.email,
+        role: newUser.role,
+      },
+    });
+  } catch (error) {
+    console.error("Create User Error:", error);
+    res.status(500).json({ message: "Failed to create user" });
+  }
+};
+
+/**
+ * DELETE USER
+ */
+exports.deleteUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    await ServiceRequest.deleteMany({
+      $or: [{ client: user._id }, { provider: user._id }],
+    });
+
+    await Payment.deleteMany({
+      $or: [{ client: user._id }, { provider: user._id }],
+    });
+
+    await user.deleteOne();
+
+    res.json({ message: "User deleted successfully" });
+  } catch (error) {
+    console.error("Delete User Error:", error);
+    res.status(500).json({ message: "Failed to delete user" });
+  }
+};
+

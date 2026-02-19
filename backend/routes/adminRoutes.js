@@ -13,5 +13,7 @@ router.get("/users", adminController.getAllUsers);
 router.get("/service-requests", adminController.getAllServiceRequests);
 router.get("/payments", adminController.getAllPayments);
 router.get("/stats", adminController.getDashboardStats);
+router.post("/useradd", adminController.createUser);   // ✅ clean
+router.delete("/users/:id", adminController.deleteUser);  // ✅ clean
 
 module.exports = router;

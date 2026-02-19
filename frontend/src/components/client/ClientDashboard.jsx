@@ -2,6 +2,8 @@ import { useState } from "react";
 import ServiceList from "./ServiceList";
 import MyRequests from "./MyRequests";
 import RequestService from "./RequestService";
+import ClientPayments from "./ClientPayments";
+
 
 const ClientDashboard = () => {
   const [selectedService, setSelectedService] = useState(null);
@@ -42,7 +44,11 @@ const ClientDashboard = () => {
         {showRequestForm || selectedService ? (
           <RequestService service={selectedService} onClose={closeRequest} />
         ) : (
-          <MyRequests />
+       <div className="space-y-6">
+  <MyRequests />
+  <ClientPayments />
+    </div>
+
         )}
       </div>
     </div>

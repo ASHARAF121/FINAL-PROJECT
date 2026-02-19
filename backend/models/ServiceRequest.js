@@ -14,8 +14,9 @@ const serviceRequestSchema = new mongoose.Schema(
     },
 
     service: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Service"
+     type: mongoose.Schema.Types.ObjectId,
+     ref: "Service",
+     required: true
     },
 
     serviceType: {
@@ -25,7 +26,7 @@ const serviceRequestSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["pending", "accepted", "rejected", "completed"],
+      enum: ["pending", "accepted", "rejected", "completed","paid"],
       default: "pending"
     },
 

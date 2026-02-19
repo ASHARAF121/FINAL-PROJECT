@@ -9,27 +9,32 @@ const crypto = require("crypto");
  * @route  POST /api/payment/create
  * @access Client
  */
-exports.createPayment = async (req, res) => {
+exports.  createPayment = async (req, res) => {
   try {
     const { serviceRequestId, paymentMethod } = req.body;
+const serviceRequest = await ServiceRequest.findById(serviceRequestId)
+  .populate("service")
+  .populate("provider");
 
-    const serviceRequest = await ServiceRequest.findById(serviceRequestId)
-      .populate("service")
-      .populate("provider");
-   
+if (!serviceRequest) {
+  return res.status(404).json({ message: "Service request not found" });
+}
+
+if (!serviceRequest.service) {
+  return res.status(400).json({ 
+    message: "Service not found for this request" 
+  });
+}
+
+if (serviceRequest.status !== "accepted") {
+  return res.status(400).json({ 
+    message: "Service request not accepted yet" 
+  });
+}
+
+const amount = serviceRequest.service.basePrice;
 
 
-    if (!serviceRequest) {
-      return res.status(404).json({ message: "Service request not found" });
-    }
-
-    if (serviceRequest.status !== "accepted") {
-      return res
-        .status(400)
-        .json({ message: "Service request not accepted yet" });
-    }
-
-    const amount = serviceRequest.service.basePrice;
 
     // create a pending payment and return a mock payment session/url
     const sessionId = crypto.randomBytes(12).toString("hex");
@@ -53,8 +58,10 @@ exports.createPayment = async (req, res) => {
       paymentUrl
     });
   } catch (error) {
-    res.status(500).json({ message: "Payment failed" });
-  }
+  console.error("PAYMENT ERROR:", error);
+  res.status(500).json({ message: error.message });
+}
+
 };
 
 /**
@@ -62,34 +69,54 @@ exports.createPayment = async (req, res) => {
  * @route POST /api/payment/confirm
  * @access Client
  */
+
 exports.confirmPayment = async (req, res) => {
   try {
     const { paymentId } = req.body;
 
     const payment = await Payment.findById(paymentId);
-    if (!payment) return res.status(404).json({ message: "Payment not found" });
-    if (payment.client.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: "Not authorized" });
+
+    if (!payment) {
+      return res.status(404).json({ message: "Payment not found" });
     }
 
-    if (payment.paymentStatus === "success") {
-      return res.json({ message: "Payment already confirmed", payment });
+    // 1️⃣ Update payment status correctly
+    payment.paymentStatus = "completed";
+
+    // 2️⃣ Update service request status
+    const serviceRequest = await ServiceRequest.findById(
+      payment.serviceRequest
+    );
+
+    if (!serviceRequest) {
+      return res.status(404).json({ message: "Service request not found" });
     }
 
-    payment.paymentStatus = "success";
-    await payment.save();
+    serviceRequest.status = "completed";
+    await serviceRequest.save();
 
-    // generate invoice file
+    // 3️⃣ Generate invoice
     const invoicePath = await generateInvoice(payment);
     payment.invoicePath = invoicePath;
+
     await payment.save();
 
-    res.json({ message: "Payment confirmed", payment, invoicePath });
+    res.json({
+      message: "Payment confirmed",
+      payment,
+      invoicePath
+    });
+
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Failed to confirm payment" });
+    console.error("🔥 Confirm Payment Error:", error);
+
+    res.status(500).json({
+      message: error.message,
+    });
   }
 };
+
+
 
 /**
  * @desc   Get client payment history
